@@ -53,7 +53,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     HWND textboxpass2;
     HWND checkbox1;
     HWND hdlgnd;
-    HMENU hmenu, subhmenu;
+    HMENU hmenu, subhmenu, subh2menu;
     int scnt;
     int scnt2;
     char keypass[MAX_PATH];
@@ -68,7 +68,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         case WM_CREATE:
             hmenu = CreateMenu();
             subhmenu = CreatePopupMenu();
+            subh2menu = CreatePopupMenu();
 
+            AppendMenu(subh2menu, MF_STRING | BM_SETCHECK, ID_FILE_SAVETOFILE, TEXT("&Save result to file"));
+            AppendMenu(hmenu, MF_STRING | MF_POPUP, (UINT_PTR) subh2menu, TEXT("&File"));
             AppendMenu(subhmenu, MF_STRING, ID_HELP_ABOUT, TEXT("&About"));
             AppendMenu(hmenu, MF_STRING | MF_POPUP, (UINT_PTR) subhmenu, TEXT("&Help"));
             
@@ -147,7 +150,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 std::cout << "Show About DialogBox" << std::endl;
                 hdlgnd = CreateDialog(hInstanced, MAKEINTRESOURCE(IDD_ABOUT), NULL, NULL);
                 DialogBox(hInstanced, MAKEINTRESOURCE(IDD_ABOUT), hdlgnd, DlgaboutProc);
-
+            }
+            else if (LOWORD(wParam) == ID_FILE_SAVETOFILE)
+            {
+                std::cout << "saving" << std::endl;
             }
         break;
         case WM_CLOSE:
