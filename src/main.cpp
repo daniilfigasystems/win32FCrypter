@@ -53,28 +53,40 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     HWND textboxpass2;
     HWND checkbox1;
     HWND hdlgnd;
-    HMENU hmenu, subhmenu, subh2menu;
+    HMENU hmenu, subhmenu, subh2menu, subh3menu;
+    MENUITEMINFO menuItem = {0};
+    OPENFILENAMEA sfn;
+    HANDLE SaveFile;
+    DWORD writtenbytes;
+    char totaltext[1024];
+    DWORD dwBufferSize;
+    char szFileName[MAX_PATH] = "";
     int scnt;
     int scnt2;
-    char keypass[MAX_PATH];
-    char keypass2[MAX_PATH];
-    char inputtext[MAX_PATH];
+    char keypass[1024];
+    char keypass2[1024];
+    char inputtext[1024];
     LPCSTR clients[2] = {
         "Encrypt",
         "Decrypt"
     };
+    
     switch(msg)
     {
         case WM_CREATE:
             hmenu = CreateMenu();
             subhmenu = CreatePopupMenu();
             subh2menu = CreatePopupMenu();
+            subh3menu = CreatePopupMenu();
 
-            AppendMenu(subh2menu, MF_STRING | BM_SETCHECK, ID_FILE_SAVETOFILE, TEXT("&Save result to file"));
+            AppendMenu(subh2menu, MF_STRING /*| MF_DISABLED*/, ID_FILE_SAVETOFILE, TEXT("&Save result to file"));
+            AppendMenu(subh2menu, MF_STRING | MF_DISABLED, ID_FILE_LOADFROMFILE, TEXT("&Load result from file"));
             AppendMenu(hmenu, MF_STRING | MF_POPUP, (UINT_PTR) subh2menu, TEXT("&File"));
+            AppendMenu(subh3menu, MF_STRING | MFS_CHECKED, ID_PASSWORD_USEPSWD, TEXT("&Use Password"));
+            AppendMenu(hmenu, MF_STRING | MF_POPUP, (UINT_PTR) subh3menu, TEXT("&Password"));
             AppendMenu(subhmenu, MF_STRING, ID_HELP_ABOUT, TEXT("&About"));
             AppendMenu(hmenu, MF_STRING | MF_POPUP, (UINT_PTR) subhmenu, TEXT("&Help"));
-            
+
             button1 = CreateWindow(TEXT("button"), TEXT("Enter"), WS_VISIBLE | WS_CHILD, 10, 65, 55, 25, hwnd, (HMENU) 2, NULL, NULL);  
             textbox1 = CreateWindow(TEXT("Edit"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL | ES_AUTOVSCROLL, 10, 5, 180, 25, hwnd, (HMENU) 5, NULL, NULL);
             textboxpass = CreateWindow(TEXT("Edit"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL | ES_AUTOVSCROLL, 10, 35, 125, 25, hwnd, (HMENU) 6, NULL, NULL);
@@ -95,16 +107,32 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         case WM_COMMAND:
             if (LOWORD(wParam) == 2)
             {
-                GetWindowTextA(GetDlgItem(hwnd, 5), inputtext, MAX_PATH);
-                GetWindowTextA(GetDlgItem(hwnd, 6), keypass, MAX_PATH);
-                GetWindowTextA(GetDlgItem(hwnd, 7), keypass2, MAX_PATH);
+                GetWindowTextA(GetDlgItem(hwnd, 5), inputtext, 1024);
+                GetWindowTextA(GetDlgItem(hwnd, 6), keypass, 1024);
+                GetWindowTextA(GetDlgItem(hwnd, 7), keypass2, 1024);
                 if (GetWindowTextLength(GetDlgItem(hwnd, 5)) <= 0)
                 {
-                    MessageBox(NULL, TEXT("Please enter a message"),TEXT("Error"), MB_OK | MB_ICONERROR);
+                    MessageBox(NULL, TEXT("Please enter a message"), TEXT("Error"), MB_OK | MB_ICONERROR);
                     std::cout << "Please enter a message" << std::endl;
+                    break;
                 }
-                scnt2 = atoi(keypass2);
-                scnt = atoi(keypass);
+                if (GetWindowTextLength(GetDlgItem(hwnd, 6)) <= 0 && IsWindowEnabled(GetDlgItem(hwnd,6)) == TRUE 
+                && GetWindowTextLength(GetDlgItem(hwnd, 7)) <= 0 && IsWindowEnabled(GetDlgItem(hwnd,7)) == TRUE)
+                {
+                    MessageBox(NULL, TEXT("Please enter a Password"), TEXT("Error"), MB_OK | MB_ICONERROR);
+                    std::cout << "Please enter a Password" << std::endl;
+                    break;
+                }
+                if (IsWindowEnabled(GetDlgItem(hwnd, 7)) == TRUE && IsWindowEnabled(GetDlgItem(hwnd, 6)) == TRUE)
+                {
+                    scnt2 = atoi(keypass2);
+                    scnt = atoi(keypass);
+                }
+                else
+                {
+                    scnt2 = 0;
+                    scnt = 0;     
+                }
                 printf("\nexCrypter ver0.4exdbgbld\n");
                 printf("\nYou need enter or create key for security\nWrite they in safe place\nFormat of key looks like <1234567890 12345>\nDEBUG BUILD VERSION EX4");
                 printf("\nPlease enter a string:\t");
@@ -153,7 +181,73 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             }
             else if (LOWORD(wParam) == ID_FILE_SAVETOFILE)
             {
-                std::cout << "saving" << std::endl;
+                if (GetWindowTextLength(GetDlgItem(hwnd, 5)) > 0)
+                {
+                    std::cout << "saving" << std::endl;
+                    RtlZeroMemory(&sfn, sizeof(sfn));
+                    sfn.lStructSize = sizeof(sfn); // SEE NOTE BELOW
+                    sfn.hwndOwner = hwnd;
+                    sfn.lpstrFilter = "FCrypt Files (*.fcrypt)\0*.fcrypt\0Text Files (*.txt)\0*.txt\0All Files (*.*)\0*.*\0";
+                    sfn.lpstrFile = szFileName;
+                    sfn.nMaxFile = MAX_PATH;
+                    sfn.Flags = OFN_EXPLORER | OFN_OVERWRITEPROMPT;
+                    sfn.lpstrDefExt = "fcrypt\0txt";
+                    sfn.lpstrTitle = "Save Password and String";
+                    if (GetSaveFileNameA(&sfn))
+                    {
+                        SaveFile = CreateFileA(szFileName, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+                        GetWindowTextA(GetDlgItem(hwnd, 5), inputtext, 1024);
+                        RtlZeroMemory(totaltext, sizeof(totaltext));
+                        strcat(totaltext, inputtext);
+                        strcat(totaltext, "\r\n");
+                        GetWindowTextA(GetDlgItem(hwnd, 6), keypass, 1024);
+                        GetWindowTextA(GetDlgItem(hwnd, 7), keypass2, 1024);
+                        strcat(totaltext, keypass);
+                        strcat(totaltext, " ");
+                        strcat(totaltext, keypass2);
+                        dwBufferSize = (DWORD) strlen(totaltext);
+                        if (SaveFile != INVALID_HANDLE_VALUE)
+                        {
+                            if (WriteFile(SaveFile, totaltext, dwBufferSize, &writtenbytes, nullptr))
+                            {
+                                std::cout << "DONE" << std::endl;
+                            }
+                            CloseHandle(SaveFile);
+                        }
+                    }
+                }
+                else
+                {
+                    std::cout << "Enter message before saving!" << std::endl;
+                    MessageBox(NULL, TEXT("Please enter message before saving"), TEXT("Error"), MB_OK | MB_ICONERROR);
+                }
+            }
+            else if (LOWORD(wParam) == ID_PASSWORD_USEPSWD)
+            {
+                menuItem.cbSize = sizeof(MENUITEMINFO);
+                menuItem.fMask = MIIM_STATE;
+                std::cout << "test" << std::endl;
+
+                GetMenuItemInfo(GetMenu(hwnd), ID_PASSWORD_USEPSWD, FALSE, &menuItem);
+
+                if (menuItem.fState == MFS_CHECKED) 
+                {
+                    SetDlgItemTextA(hwnd, 7, NULL);
+                    EnableWindow(GetDlgItem(hwnd, 7), FALSE);
+                    SetDlgItemTextA(hwnd, 6, NULL);
+                    EnableWindow(GetDlgItem(hwnd, 6), FALSE);
+
+                    menuItem.fState = MFS_UNCHECKED;
+                } 
+                else 
+                {
+                    EnableWindow(GetDlgItem(hwnd, 7), TRUE);
+                    EnableWindow(GetDlgItem(hwnd, 6), TRUE);
+                    
+                    menuItem.fState = MFS_CHECKED;
+                }
+                
+                SetMenuItemInfo(GetMenu(hwnd), ID_PASSWORD_USEPSWD, FALSE, &menuItem);
             }
         break;
         case WM_CLOSE:
