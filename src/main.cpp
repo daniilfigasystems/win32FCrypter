@@ -1,51 +1,63 @@
 #include <windows.h>
+#include <Uxtheme.h>
 #include <tchar.h>
 #include <cstring>
 #include <iomanip>
 #include <iostream>
+#include <algorithm>
 #include "resource.h"
+#include "versioninfo.h"
 #include <memory>
 #include <commctrl.h>
+#include <ctype.h>
 const TCHAR Class_Name[] = TEXT("myWindowClass");
 int selectindx = 0;
 HINSTANCE hInstanced;
+RTL_OSVERSIONINFOW wininfo = GetOSVersion();
+int crypterver = 3;
+WINBOOL reversed = FALSE;
 
 INT_PTR CALLBACK DlgaboutProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-  switch (msg)
-  {
-    case WM_COMMAND:
-    {
-      WORD id = LOWORD(wParam);
+    std::string VERDATE;
+    VERDATE.append(IDV_VER);
 
-      switch (id)
-      {
-        case IDOK:
+    switch (msg)
+    {
+        case WM_COMMAND:
         {
-          EndDialog(hwnd, (INT_PTR)id);
-          return (INT_PTR)TRUE;
+            WORD id = LOWORD(wParam);
+
+            switch (id)
+            {
+                case IDOK:
+                {
+                EndDialog(hwnd, (INT_PTR)id);
+                return (INT_PTR)TRUE;
+                }
+            }
+            break;
         }
-      }
-      break;
+
+        case WM_INITDIALOG:
+        {
+            SetDlgItemTextA(hwnd, IDC_VER, VERDATE.c_str());
+            return (INT_PTR)TRUE;
+        }
+
+        case WM_DESTROY:
+        {
+            EndDialog(hwnd, (INT_PTR)0);
+            return (INT_PTR)TRUE;
+        }
     }
 
-    case WM_INITDIALOG:
-    {
-      return (INT_PTR)TRUE;
-    }
-
-    case WM_DESTROY:
-    {
-        EndDialog(hwnd, (INT_PTR)0);
-        return (INT_PTR)TRUE;
-    }
-  }
-
-  return (INT_PTR)FALSE;
+    return (INT_PTR)FALSE;
 }
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+    LONG style;
     HWND button1;
     HWND textbox1;
     HWND textbox2;
@@ -53,7 +65,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     HWND textboxpass2;
     HWND checkbox1;
     HWND hdlgnd;
-    HMENU hmenu, subhmenu, subh2menu, subh3menu;
+    HMENU hmenu, subhmenu, subh2menu, subh3menu, subh4menu, subh32menu;
     MENUITEMINFO menuItem = {0};
     OPENFILENAMEA sfn;
     HANDLE SaveFile;
@@ -78,12 +90,32 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             subhmenu = CreatePopupMenu();
             subh2menu = CreatePopupMenu();
             subh3menu = CreatePopupMenu();
+            subh32menu = CreatePopupMenu();
+            subh4menu = CreatePopupMenu();
 
-            AppendMenu(subh2menu, MF_STRING /*| MF_DISABLED*/, ID_FILE_SAVETOFILE, TEXT("&Save result to file"));
-            AppendMenu(subh2menu, MF_STRING | MF_DISABLED, ID_FILE_LOADFROMFILE, TEXT("&Load result from file"));
+            if ((wininfo.dwMajorVersion >= 5 && wininfo.dwMinorVersion > 0) || wininfo.dwMajorVersion > 5)
+                AppendMenu(subh2menu, MF_STRING /*| MF_DISABLED*/, ID_FILE_SAVETOFILE, TEXT("&Save result to file"));
+            else
+                AppendMenu(subh2menu, MF_STRING | MF_DISABLED | MFS_DISABLED, ID_FILE_SAVETOFILE, TEXT("&Save result to file"));
+            AppendMenu(subh2menu, MF_STRING | MF_DISABLED | MFS_DISABLED, ID_FILE_LOADFROMFILE, TEXT("&Load result from file"));
             AppendMenu(hmenu, MF_STRING | MF_POPUP, (UINT_PTR) subh2menu, TEXT("&File"));
-            AppendMenu(subh3menu, MF_STRING | MFS_CHECKED, ID_PASSWORD_USEPSWD, TEXT("&Use Password"));
-            AppendMenu(hmenu, MF_STRING | MF_POPUP, (UINT_PTR) subh3menu, TEXT("&Password"));
+            AppendMenu(subh4menu, MF_STRING, ID_EDIT_CLEAR, TEXT("&Clear String"));
+            AppendMenu(hmenu, MF_STRING | MF_POPUP, (UINT_PTR) subh4menu, TEXT("&Edit"));
+            AppendMenu(subh3menu, MF_STRING | MFS_CHECKED, ID_ENCRYPTION_USEPSWD, TEXT("&Use Password"));
+            if ((wininfo.dwMajorVersion > 5) || (wininfo.dwMajorVersion >= 5 && wininfo.dwMinorVersion > 1))
+                AppendMenu(subh3menu, MF_STRING | MFS_UNCHECKED, ID_ENCRYPTION_HIDEPSWD, TEXT("&Hide Password"));
+            else
+                AppendMenu(subh3menu, MF_STRING | MFS_UNCHECKED | MF_DISABLED | MFS_DISABLED, ID_ENCRYPTION_HIDEPSWD, TEXT("&Hide Password"));
+            InsertMenu(subh3menu, 3, MF_SEPARATOR | MF_BYPOSITION, IDC_STATIC, NULL);
+            AppendMenu(subh3menu, MF_STRING | MFS_UNCHECKED, ID_ENCRYPTION_REVERSE, TEXT("&Apply Reverse Encrypt"));
+            InsertMenu(subh3menu, 4, MF_SEPARATOR | MF_BYPOSITION, IDC_STATIC, NULL);
+            AppendMenu(subh3menu, MF_POPUP, (UINT_PTR) subh32menu, TEXT("&Crypter Version"));
+            AppendMenu(subh32menu, MF_STRING | MFS_UNCHECKED, ID_ENCRYPTION_FVERSION_CRYPT1, TEXT("&Crypter 1.0 (Oldest)"));
+            AppendMenu(subh32menu, MF_STRING | MFS_UNCHECKED, ID_ENCRYPTION_FVERSION_CRYPT2, TEXT("&Crypter 2.0 (Old)"));
+            AppendMenu(subh32menu, MF_STRING | MFS_CHECKED, ID_ENCRYPTION_FVERSION_CRYPT3, TEXT("&Crypter 3.0 (Stable)"));
+            AppendMenu(subh32menu, MF_STRING | MFS_UNCHECKED, ID_ENCRYPTION_FVERSION_CRYPT4, TEXT("&Crypter 4.0 (Experimental)"));
+            AppendMenu(subh32menu, MF_STRING | MFS_UNCHECKED, ID_ENCRYPTION_FVERSION_CRYPT45, TEXT("&Crypter 4.5 (Test)"));
+            AppendMenu(hmenu, MF_STRING | MF_POPUP, (UINT_PTR) subh3menu, TEXT("&Encryption"));
             AppendMenu(subhmenu, MF_STRING, ID_HELP_ABOUT, TEXT("&About"));
             AppendMenu(hmenu, MF_STRING | MF_POPUP, (UINT_PTR) subhmenu, TEXT("&Help"));
 
@@ -101,6 +133,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 SendMessage(textbox2, CB_ADDSTRING, 1, (LPARAM) clients[i]);
             }
 
+            if ((wininfo.dwMajorVersion > 5) || (wininfo.dwMajorVersion >= 5 && wininfo.dwMinorVersion > 1))
+            {
+                SendMessage(GetDlgItem(hwnd, 7), EM_SETPASSWORDCHAR, 0, 0);
+                SendMessage(GetDlgItem(hwnd, 6), EM_SETPASSWORDCHAR, 0, 0);
+            }
+            
             SendMessage(textbox2, CB_SETCURSEL, (WPARAM)0, 0 );
 
         break;
@@ -108,6 +146,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             if (LOWORD(wParam) == 2)
             {
                 GetWindowTextA(GetDlgItem(hwnd, 5), inputtext, 1024);
+                if (reversed)
+                {
+                    std::reverse(inputtext, inputtext + strlen(inputtext));
+                }
                 GetWindowTextA(GetDlgItem(hwnd, 6), keypass, 1024);
                 GetWindowTextA(GetDlgItem(hwnd, 7), keypass2, 1024);
                 if (GetWindowTextLength(GetDlgItem(hwnd, 5)) <= 0)
@@ -125,43 +167,276 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 }
                 if (IsWindowEnabled(GetDlgItem(hwnd, 7)) == TRUE && IsWindowEnabled(GetDlgItem(hwnd, 6)) == TRUE)
                 {
-                    scnt2 = atoi(keypass2);
-                    scnt = atoi(keypass);
+                    if (crypterver == 45)
+                    {
+                        scnt2 = int(keypass2);
+                        scnt = int(keypass);
+                    }
+                    else
+                    {
+                        scnt2 = atoi(keypass2);
+                        scnt = atoi(keypass);
+                    }
                 }
                 else
                 {
                     scnt2 = 0;
                     scnt = 0;     
                 }
-                printf("\nexCrypter ver0.4exdbgbld\n");
-                printf("\nYou need enter or create key for security\nWrite they in safe place\nFormat of key looks like <1234567890 12345>\nDEBUG BUILD VERSION EX4");
-                printf("\nPlease enter a string:\t");
-                std::cout << inputtext;
-                printf("\nPlease choose following options:\n");
-                printf("1 = Encrypt the string.\n");
-                printf("2 = Decrypt the string.\n");
-                std::cout << selectindx << std::endl;
-                printf("Create or Provide Exist Key:\n");
-                std::cout << scnt << " " << scnt2;
+
                 // std::cout << keypass << std::endl;
                 // std::cout << keypass2 << std::endl;
                 switch(selectindx)
                 {
                 case 0:
-                    for(int i = 0; (i < MAX_PATH && inputtext[i] != '\0'); i++)
-                        inputtext[i] = inputtext[i] + scnt - scnt2 + 25 - 213 - 1 + 2 + scnt; //the key for encryption is 3 that is added to ASCII value
-                    printf("\nYou Encrypted String! You now in safe");
-                    printf("\nEncrypted string: %s\n", inputtext);
-                    printf("\naddr %p | %p | %p", inputtext, scnt2, scnt);
-                    break;
+                    switch(crypterver)
+                    {
+                        case 45:
+                        {
+                            int index = 0;
+
+                            for (int i = 0; i < (strlen(inputtext) + strlen(keypass) + strlen(keypass2)); i++)
+                            {
+                                index++;
+                            }
+
+                            printf("\nCrypter ver0.4.5exdbgbld\n");
+                            printf("\nYou need enter or create key for security\nWrite they in safe place\nFormat of key looks like <1234567890 12345>\nDEBUG BUILD VERSION EX4.5");
+                            printf("\nPlease enter a string:\t");
+                            std::cout << inputtext;
+                            printf("\nPlease choose following options:\n");
+                            printf("1 = Encrypt the string.\n");
+                            printf("2 = Decrypt the string.\n");
+                            std::cout << selectindx << std::endl;
+                            printf("Create or Provide Exist Key:\n");
+                            std::cout << scnt << " " << scnt2;
+                            for(int i = 0; (i < 1024 && inputtext[i] != '\0'); i++)
+                                inputtext[i] = inputtext[i] + scnt - scnt2 + 25 - 213 - 1 + 2 + scnt + index; //the key for encryption is 3 that is added to ASCII value
+                            printf("\nYou Encrypted String! You now in safe");
+                            printf("\nEncrypted string: %s\n", inputtext);
+                            printf("\naddr %p | %p | %p", inputtext, scnt2, scnt);
+                        break;
+                        }
+
+                        case 4:
+                        {
+                            int index = 0;
+
+                            for (int i = 0; i < (strlen(inputtext) + strlen(keypass) + strlen(keypass2)); i++)
+                            {
+                                index++;
+                            }
+
+                            printf("\nCrypter ver0.4exdbgbld\n");
+                            printf("\nYou need enter or create key for security\nWrite they in safe place\nFormat of key looks like <1234567890 12345>\nDEBUG BUILD VERSION EX4");
+                            printf("\nPlease enter a string:\t");
+                            std::cout << inputtext;
+                            printf("\nPlease choose following options:\n");
+                            printf("1 = Encrypt the string.\n");
+                            printf("2 = Decrypt the string.\n");
+                            std::cout << selectindx << std::endl;
+                            printf("Create or Provide Exist Key:\n");
+                            std::cout << scnt << " " << scnt2;
+                            for(int i = 0; (i < 1024 && inputtext[i] != '\0'); i++)
+                                inputtext[i] = inputtext[i] + scnt - scnt2 + 25 - 213 - 1 + 2 + scnt + index; //the key for encryption is 3 that is added to ASCII value
+                            printf("\nYou Encrypted String! You now in safe");
+                            printf("\nEncrypted string: %s\n", inputtext);
+                            printf("\naddr %p | %p | %p", inputtext, scnt2, scnt);
+                        break;
+                        }
+
+                        case 3:
+                        {
+                            printf("\nCrypter ver0.3\n");
+                            printf("\nYou need enter or create key for security\nWrite they in safe place\nFormat of key looks like <1234567890 12345>\nDEBUG BUILD VERSION 3");
+                            printf("\nPlease enter a string:\t");
+                            std::cout << inputtext;
+                            printf("\nPlease choose following options:\n");
+                            printf("1 = Encrypt the string.\n");
+                            printf("2 = Decrypt the string.\n");
+                            std::cout << selectindx << std::endl;
+                            printf("Create or Provide Exist Key:\n");
+                            std::cout << scnt << " " << scnt2;
+                            for(int i = 0; (i < 1024 && inputtext[i] != '\0'); i++)
+                                inputtext[i] = inputtext[i] + scnt - scnt2 + 25 - 213 - 1 + 2 + scnt; //the key for encryption is 3 that is added to ASCII value
+                            printf("\nYou Encrypted String! You now in safe");
+                            printf("\nEncrypted string: %s\n", inputtext);
+                            printf("\naddr %p | %p | %p", inputtext, scnt2, scnt);
+                        break;
+                        }
+
+                        case 2:
+                        {
+                            printf("\nCrypter ver0.2dbgbld\n");
+                            printf("\nYou need enter or create key for security\nWrite they in safe place\nFormat of key looks like <1234567890 12345>\nDEBUG BUILD VERSION 2");
+                            printf("\nPlease enter a string:\t");
+                            std::cout << inputtext;
+                            printf("\nPlease choose following options:\n");
+                            printf("1 = Encrypt the string.\n");
+                            printf("2 = Decrypt the string.\n");
+                            std::cout << selectindx << std::endl;
+                            printf("Create or Provide Exist Key:\n");
+                            std::cout << scnt << " " << scnt2;
+                            for(int i = 0; (i < 512 && inputtext[i] != '\0'); i++)
+                                inputtext[i] = inputtext[i] + scnt - scnt2; //the key for encryption is 3 that is added to ASCII value
+                            printf("\nYou Encrypted String! You now in safe");
+                            printf("\nEncrypted string: %s\n", inputtext);
+                            printf("\naddr %p | %p | %p", inputtext, scnt2, scnt);
+                        break;
+                        }
+
+                        case 1:
+                        {
+                            printf("\nCrypter ver0.1\n");
+                            printf("\nYou need enter or create two keys for security\nWrite they in safe place\nTHIS PROGRAM CONTAINS BUGS");
+                            printf("\nPlease enter a string:\t");
+                            std::cout << inputtext;
+                            printf("\nPlease choose following options:\n");
+                            printf("1 = Encrypt the string.\n");
+                            printf("2 = Decrypt the string.\n");
+                            std::cout << selectindx << std::endl;
+                            printf("Create or Provide Exist Key:\n");
+                            std::cout << scnt << std::endl;
+                            printf("Create or Provide Exist Second Key:\n");
+                            std::cout << scnt2;
+                            for(int i = 0; (i < 512 && inputtext[i] != '\0'); i++)
+                                inputtext[i] = inputtext[i] + scnt - scnt2; //the key for encryption is 3 that is added to ASCII value
+                            printf("\nYou Encrypted String! You now in safe");
+                            printf("\nEncrypted string: %s\n", inputtext);
+                            printf("\naddr %p | %p | %p", inputtext, scnt2, scnt);
+                        break;
+                        }
+
+                        default:
+                            MessageBox(NULL, TEXT("Wrong Crypter Version"), TEXT("Error"), MB_OK | MB_ICONERROR);
+                        break;
+                    }
+                break;
 
                 case 1:
-                    for(int i = 0; (i < MAX_PATH && inputtext[i] != '\0'); i++)
-                        inputtext[i] = inputtext[i] - scnt + scnt2 - 25 + 213 + 1 - 2 - scnt; //the key for encryption is 3 that is subtracted to ASCII value
-                    printf("\nYou Decrypted String!\n");
-                    printf("\nDecrypted string: %s\n", inputtext);
-                    printf("\naddr %p | %p | %p", inputtext, scnt2, scnt);
-                    break;
+                    switch(crypterver)
+                    {
+                        case 45:
+                        {
+                            int index = 0;
+
+                            for (int i = 0; i < (strlen(inputtext) + strlen(keypass) + strlen(keypass2)); i++)
+                            {
+                                index++;
+                            }
+
+                            printf("\nCrypter ver0.4.5exdbgbld\n");
+                            printf("\nYou need enter or create key for security\nWrite they in safe place\nFormat of key looks like <1234567890 12345>\nDEBUG BUILD VERSION EX4.5");
+                            printf("\nPlease enter a string:\t");
+                            std::cout << inputtext;
+                            printf("\nPlease choose following options:\n");
+                            printf("1 = Encrypt the string.\n");
+                            printf("2 = Decrypt the string.\n");
+                            std::cout << selectindx << std::endl;
+                            printf("Create or Provide Exist Key:\n");
+                            std::cout << scnt << " " << scnt2;
+                            for(int i = 0; (i < 1024 && inputtext[i] != '\0'); i++)
+                            inputtext[i] = inputtext[i] - scnt + scnt2 - 25 + 213 + 1 - 2 - scnt - index; //the key for encryption is 3 that is subtracted to ASCII value
+                            printf("\nYou Decrypted String!\n");
+                            printf("\nDecrypted string: %s\n", inputtext);
+                            printf("\naddr %p | %p | %p", inputtext, scnt2, scnt);
+                        break;
+                        }
+
+                        case 4:
+                        {
+                            int index = 0;
+
+                            for (int i = 0; i < (strlen(inputtext) + strlen(keypass) + strlen(keypass2)); i++)
+                            {
+                                index++;
+                            }
+
+                            printf("\nCrypter ver0.4exdbgbld\n");
+                            printf("\nYou need enter or create key for security\nWrite they in safe place\nFormat of key looks like <1234567890 12345>\nDEBUG BUILD VERSION EX4");
+                            printf("\nPlease enter a string:\t");
+                            std::cout << inputtext;
+                            printf("\nPlease choose following options:\n");
+                            printf("1 = Encrypt the string.\n");
+                            printf("2 = Decrypt the string.\n");
+                            std::cout << selectindx << std::endl;
+                            printf("Create or Provide Exist Key:\n");
+                            std::cout << scnt << " " << scnt2;
+                            for(int i = 0; (i < 1024 && inputtext[i] != '\0'); i++)
+                            inputtext[i] = inputtext[i] - scnt + scnt2 - 25 + 213 + 1 - 2 - scnt - index; //the key for encryption is 3 that is subtracted to ASCII value
+                            printf("\nYou Decrypted String!\n");
+                            printf("\nDecrypted string: %s\n", inputtext);
+                            printf("\naddr %p | %p | %p", inputtext, scnt2, scnt);
+                        break;
+                        }
+
+                        case 3:
+                        {
+                            printf("\nCrypter ver0.3\n");
+                            printf("\nYou need enter or create key for security\nWrite they in safe place\nFormat of key looks like <1234567890 12345>\nDEBUG BUILD VERSION 3");
+                            printf("\nPlease enter a string:\t");
+                            std::cout << inputtext;
+                            printf("\nPlease choose following options:\n");
+                            printf("1 = Encrypt the string.\n");
+                            printf("2 = Decrypt the string.\n");
+                            std::cout << selectindx << std::endl;
+                            printf("Create or Provide Exist Key:\n");
+                            std::cout << scnt << " " << scnt2;
+                            for(int i = 0; (i < 1024 && inputtext[i] != '\0'); i++)
+                            inputtext[i] = inputtext[i] - scnt + scnt2 - 25 + 213 + 1 - 2 - scnt; //the key for encryption is 3 that is subtracted to ASCII value
+                            printf("\nYou Decrypted String!\n");
+                            printf("\nDecrypted string: %s\n", inputtext);
+                            printf("\naddr %p | %p | %p", inputtext, scnt2, scnt);
+                        break;
+                        }
+
+                        case 2:
+                        {
+                            printf("\nCrypter ver0.2dbgbld\n");
+                            printf("\nYou need enter or create key for security\nWrite they in safe place\nFormat of key looks like <1234567890 12345>\nDEBUG BUILD VERSION 2");
+                            printf("\nPlease enter a string:\t");
+                            std::cout << inputtext;
+                            printf("\nPlease choose following options:\n");
+                            printf("1 = Encrypt the string.\n");
+                            printf("2 = Decrypt the string.\n");
+                            std::cout << selectindx << std::endl;
+                            printf("Create or Provide Exist Key:\n");
+                            std::cout << scnt << " " << scnt2;
+                            for(int i = 0; (i < 512 && inputtext[i] != '\0'); i++)
+                            inputtext[i] = inputtext[i] - scnt + scnt2; //the key for encryption is 3 that is subtracted to ASCII value
+                            printf("\nYou Decrypted String!\n");
+                            printf("\nDecrypted string: %s\n", inputtext);
+                            printf("\naddr %p | %p | %p", inputtext, scnt2, scnt);
+                        break;
+                        }
+
+                        case 1:
+                        {
+                            printf("\nCrypter ver0.1\n");
+                            printf("\nYou need enter or create two keys for security\nWrite they in safe place\nTHIS PROGRAM CONTAINS BUGS");
+                            printf("\nPlease enter a string:\t");
+                            std::cout << inputtext;
+                            printf("\nPlease choose following options:\n");
+                            printf("1 = Encrypt the string.\n");
+                            printf("2 = Decrypt the string.\n");
+                            std::cout << selectindx << std::endl;
+                            printf("Create or Provide Exist Key:\n");
+                            std::cout << scnt << std::endl;
+                            printf("Create or Provide Exist Second Key:\n");
+                            std::cout << scnt2;
+                            for(int i = 0; (i < 512 && inputtext[i] != '\0'); i++)
+                            inputtext[i] = inputtext[i] - scnt + scnt2; //the key for encryption is 3 that is subtracted to ASCII value
+                            printf("\nYou Decrypted String!\n");
+                            printf("\nDecrypted string: %s\n", inputtext);
+                            printf("\naddr %p | %p | %p", inputtext, scnt2, scnt);
+                        break;
+                        }
+
+                        default:
+                            MessageBox(NULL, TEXT("Wrong Crypter Version"), TEXT("Error"), MB_OK | MB_ICONERROR);
+                        break;
+                    }
+                break;
 
                 default:
                     printf("\nYou entered wrong number Select from 1 to 2\n");
@@ -187,11 +462,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     RtlZeroMemory(&sfn, sizeof(sfn));
                     sfn.lStructSize = sizeof(sfn); // SEE NOTE BELOW
                     sfn.hwndOwner = hwnd;
-                    sfn.lpstrFilter = "FCrypt Files (*.fcrypt)\0*.fcrypt\0Text Files (*.txt)\0*.txt\0All Files (*.*)\0*.*\0";
+                    sfn.lpstrFilter = "Crypt Files (*.crypt)\0*.fcrypt\0Text Files (*.txt)\0*.txt\0All Files (*.*)\0*.*\0";
                     sfn.lpstrFile = szFileName;
                     sfn.nMaxFile = MAX_PATH;
                     sfn.Flags = OFN_EXPLORER | OFN_OVERWRITEPROMPT;
-                    sfn.lpstrDefExt = "fcrypt\0txt";
+                    sfn.lpstrDefExt = "crypt\0txt";
                     sfn.lpstrTitle = "Save Password and String";
                     if (GetSaveFileNameA(&sfn))
                     {
@@ -222,13 +497,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     MessageBox(NULL, TEXT("Please enter message before saving"), TEXT("Error"), MB_OK | MB_ICONERROR);
                 }
             }
-            else if (LOWORD(wParam) == ID_PASSWORD_USEPSWD)
+            else if (LOWORD(wParam) == ID_ENCRYPTION_USEPSWD)
             {
                 menuItem.cbSize = sizeof(MENUITEMINFO);
                 menuItem.fMask = MIIM_STATE;
                 std::cout << "test" << std::endl;
 
-                GetMenuItemInfo(GetMenu(hwnd), ID_PASSWORD_USEPSWD, FALSE, &menuItem);
+                GetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_USEPSWD, FALSE, &menuItem);
 
                 if (menuItem.fState == MFS_CHECKED) 
                 {
@@ -247,7 +522,281 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     menuItem.fState = MFS_CHECKED;
                 }
                 
-                SetMenuItemInfo(GetMenu(hwnd), ID_PASSWORD_USEPSWD, FALSE, &menuItem);
+                SetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_USEPSWD, FALSE, &menuItem);
+            }
+            else if (LOWORD(wParam) == ID_ENCRYPTION_HIDEPSWD)
+            {
+                menuItem.cbSize = sizeof(MENUITEMINFO);
+                menuItem.fMask = MIIM_STATE;
+                std::cout << "test" << std::endl;
+
+                GetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_HIDEPSWD, FALSE, &menuItem);
+
+                if (menuItem.fState == MFS_CHECKED) 
+                {
+                    style = GetWindowLong(GetDlgItem(hwnd, 6), GWL_STYLE);
+                    style = style & ~ES_PASSWORD;
+                    SendMessage(GetDlgItem(hwnd, 6), EM_SETPASSWORDCHAR, 0, 0);
+                    SendMessage(GetDlgItem(hwnd, 7), EM_SETPASSWORDCHAR, 0, 0);
+
+                    menuItem.fState = MFS_UNCHECKED;
+                } 
+                else 
+                {
+                    style = GetWindowLong(GetDlgItem(hwnd, 6), GWL_STYLE);
+                    style = (style | ES_PASSWORD);
+                    SendMessage(GetDlgItem(hwnd, 6), EM_SETPASSWORDCHAR, (WPARAM) '*', 0);
+                    SendMessage(GetDlgItem(hwnd, 7), EM_SETPASSWORDCHAR, (WPARAM) '*', 0);
+
+                    menuItem.fState = MFS_CHECKED;
+                }
+                
+                SetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_HIDEPSWD, FALSE, &menuItem);
+            }
+            else if (LOWORD(wParam) == ID_ENCRYPTION_REVERSE)
+            {
+                menuItem.cbSize = sizeof(MENUITEMINFO);
+                menuItem.fMask = MIIM_STATE;
+                std::cout << "test" << std::endl;
+
+                GetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_REVERSE, FALSE, &menuItem);
+
+                if (menuItem.fState == MFS_CHECKED) 
+                {
+                    reversed = FALSE;
+
+                    menuItem.fState = MFS_UNCHECKED;
+                } 
+                else 
+                {
+                    reversed = TRUE;
+                    
+                    menuItem.fState = MFS_CHECKED;
+                }
+                
+                SetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_REVERSE, FALSE, &menuItem);
+            }
+            else if (LOWORD(wParam) == ID_ENCRYPTION_FVERSION_CRYPT45)
+            {
+                std::cout << "test45" << std::endl;
+                crypterver = 45;
+
+                for (int i = ID_ENCRYPTION_FVERSION_CRYPT1; i < (ID_ENCRYPTION_FVERSION_CRYPT45 + 1); i++)
+                {
+                    menuItem.cbSize = sizeof(MENUITEMINFO);
+                    menuItem.fMask = MIIM_STATE;
+
+                    GetMenuItemInfo(GetMenu(hwnd), i, FALSE, &menuItem);
+
+                    menuItem.fState = MFS_UNCHECKED;
+
+                    SetMenuItemInfo(GetMenu(hwnd), i, FALSE, &menuItem);     
+                }
+
+                menuItem.cbSize = sizeof(MENUITEMINFO);
+                menuItem.fMask = MIIM_STATE;
+
+                GetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_FVERSION_CRYPT45, FALSE, &menuItem);
+
+                if (menuItem.fState == MFS_CHECKED) 
+                {
+                    menuItem.fState = MFS_UNCHECKED;
+                } 
+                else 
+                {
+                    menuItem.fState = MFS_CHECKED;
+                }
+                
+                SetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_FVERSION_CRYPT45, FALSE, &menuItem); 
+
+                menuItem.cbSize = sizeof(MENUITEMINFO);
+                menuItem.fMask = MIIM_STATE;
+
+                GetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_USEPSWD, FALSE, &menuItem);
+
+                menuItem.fState = MFS_CHECKED;
+
+                SetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_USEPSWD, FALSE, &menuItem); 
+            }
+            else if (LOWORD(wParam) == ID_ENCRYPTION_FVERSION_CRYPT4)
+            {
+                std::cout << "test4" << std::endl;
+                crypterver = 4;
+
+                for (int i = ID_ENCRYPTION_FVERSION_CRYPT1; i < (ID_ENCRYPTION_FVERSION_CRYPT45 + 1); i++)
+                {
+                    menuItem.cbSize = sizeof(MENUITEMINFO);
+                    menuItem.fMask = MIIM_STATE;
+
+                    GetMenuItemInfo(GetMenu(hwnd), i, FALSE, &menuItem);
+
+                    menuItem.fState = MFS_UNCHECKED;
+
+                    SetMenuItemInfo(GetMenu(hwnd), i, FALSE, &menuItem);     
+                }
+
+                menuItem.cbSize = sizeof(MENUITEMINFO);
+                menuItem.fMask = MIIM_STATE;
+
+                GetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_FVERSION_CRYPT4, FALSE, &menuItem);
+
+                if (menuItem.fState == MFS_CHECKED) 
+                {
+                    menuItem.fState = MFS_UNCHECKED;
+                } 
+                else 
+                {
+                    menuItem.fState = MFS_CHECKED;
+                }
+                
+                SetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_FVERSION_CRYPT4, FALSE, &menuItem); 
+
+                menuItem.cbSize = sizeof(MENUITEMINFO);
+                menuItem.fMask = MIIM_STATE;
+
+                GetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_USEPSWD, FALSE, &menuItem);
+
+                menuItem.fState = MFS_CHECKED;
+
+                SetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_USEPSWD, FALSE, &menuItem); 
+            }
+            else if (LOWORD(wParam) == ID_ENCRYPTION_FVERSION_CRYPT3)
+            {
+                std::cout << "test3" << std::endl;
+                crypterver = 3;
+
+                for (int i = ID_ENCRYPTION_FVERSION_CRYPT1; i < (ID_ENCRYPTION_FVERSION_CRYPT45 + 1); i++)
+                {
+                    menuItem.cbSize = sizeof(MENUITEMINFO);
+                    menuItem.fMask = MIIM_STATE;
+
+                    GetMenuItemInfo(GetMenu(hwnd), i, FALSE, &menuItem);
+
+                    menuItem.fState = MFS_UNCHECKED;
+
+                    SetMenuItemInfo(GetMenu(hwnd), i, FALSE, &menuItem);     
+                }
+
+                menuItem.cbSize = sizeof(MENUITEMINFO);
+                menuItem.fMask = MIIM_STATE;
+                
+                GetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_FVERSION_CRYPT3, FALSE, &menuItem);
+
+                if (menuItem.fState == MFS_CHECKED) 
+                {
+                    menuItem.fState = MFS_UNCHECKED;
+                } 
+                else 
+                {
+                    menuItem.fState = MFS_CHECKED;
+                }
+                
+                SetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_FVERSION_CRYPT3, FALSE, &menuItem); 
+
+                menuItem.cbSize = sizeof(MENUITEMINFO);
+                menuItem.fMask = MIIM_STATE;
+
+                GetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_USEPSWD, FALSE, &menuItem);
+
+                menuItem.fState = MFS_CHECKED;
+                
+
+                SetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_USEPSWD, FALSE, &menuItem); 
+            }
+            else if (LOWORD(wParam) == ID_ENCRYPTION_FVERSION_CRYPT2)
+            {
+                std::cout << "test2" << std::endl;
+                crypterver = 2;
+                
+                for (int i = ID_ENCRYPTION_FVERSION_CRYPT1; i < (ID_ENCRYPTION_FVERSION_CRYPT45 + 1); i++)
+                {
+                    menuItem.cbSize = sizeof(MENUITEMINFO);
+                    menuItem.fMask = MIIM_STATE;
+
+                    GetMenuItemInfo(GetMenu(hwnd), i, FALSE, &menuItem);
+
+                    menuItem.fState = MFS_UNCHECKED;
+
+                    SetMenuItemInfo(GetMenu(hwnd), i, FALSE, &menuItem);     
+                }
+
+                menuItem.cbSize = sizeof(MENUITEMINFO);
+                menuItem.fMask = MIIM_STATE;
+                
+                GetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_FVERSION_CRYPT2, FALSE, &menuItem);
+
+                if (menuItem.fState == MFS_CHECKED) 
+                {
+                    menuItem.fState = MFS_UNCHECKED;
+                } 
+                else 
+                {
+                    menuItem.fState = MFS_CHECKED;
+                }
+                
+                SetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_FVERSION_CRYPT2, FALSE, &menuItem); 
+
+                menuItem.cbSize = sizeof(MENUITEMINFO);
+                menuItem.fMask = MIIM_STATE;
+
+                GetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_USEPSWD, FALSE, &menuItem);
+
+                menuItem.fState = MFS_CHECKED | MFS_DISABLED;
+                
+                EnableWindow(GetDlgItem(hwnd, 7), TRUE);
+                EnableWindow(GetDlgItem(hwnd, 6), TRUE);
+
+                SetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_USEPSWD, FALSE, &menuItem); 
+            }
+            else if (LOWORD(wParam) == ID_ENCRYPTION_FVERSION_CRYPT1)
+            {
+                std::cout << "test1" << std::endl;
+                crypterver = 1;
+
+                for (int i = ID_ENCRYPTION_FVERSION_CRYPT1; i < (ID_ENCRYPTION_FVERSION_CRYPT45 + 1); i++)
+                {
+                    menuItem.cbSize = sizeof(MENUITEMINFO);
+                    menuItem.fMask = MIIM_STATE;
+
+                    GetMenuItemInfo(GetMenu(hwnd), i, FALSE, &menuItem);
+
+                    menuItem.fState = MFS_UNCHECKED;
+
+                    SetMenuItemInfo(GetMenu(hwnd), i, FALSE, &menuItem); 
+                        
+                }
+
+                menuItem.cbSize = sizeof(MENUITEMINFO);
+                menuItem.fMask = MIIM_STATE;
+                
+                GetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_FVERSION_CRYPT1, FALSE, &menuItem);
+
+                if (menuItem.fState == MFS_CHECKED) 
+                {
+                    menuItem.fState = MFS_UNCHECKED;
+                } 
+                else 
+                {
+                    menuItem.fState = MFS_CHECKED;
+                }
+                
+                SetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_FVERSION_CRYPT1, FALSE, &menuItem); 
+
+                menuItem.cbSize = sizeof(MENUITEMINFO);
+                menuItem.fMask = MIIM_STATE;
+
+                GetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_USEPSWD, FALSE, &menuItem);
+
+                menuItem.fState = MFS_CHECKED | MFS_DISABLED;
+                
+                EnableWindow(GetDlgItem(hwnd, 7), TRUE);
+                EnableWindow(GetDlgItem(hwnd, 6), TRUE);
+
+                SetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_USEPSWD, FALSE, &menuItem); 
+            }
+            else if (LOWORD(wParam) == ID_EDIT_CLEAR)
+            {
+                SetDlgItemTextA(hwnd, 5, NULL);
             }
         break;
         case WM_CLOSE:
@@ -267,7 +816,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     WNDCLASSEX wc;
     HWND hwnd;
     MSG Msg;
-
+    
     hInstanced = hInstance;
 
     ShowWindow(GetConsoleWindow(), SW_HIDE);
@@ -299,6 +848,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     ShowWindow(hwnd, nCmdShow);
     UpdateWindow(hwnd);
+    if ((wininfo.dwMajorVersion > 5) || (wininfo.dwMajorVersion >= 5 && wininfo.dwMinorVersion > 1))
+        SetWindowTheme(hwnd, L"", L"");
 
     while (GetMessage(&Msg, NULL, 0, 0) > 0)
     {

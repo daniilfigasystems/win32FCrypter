@@ -5,6 +5,7 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/tools/boost",
+                "${workspaceFolder}/src/include",
                 "${workspaceFolder}/src/include"
             ],
             "defines": [

@@ -1,30 +1,14 @@
 #include "resource.h"
 #include "afxres.h"
 IDI_MYICON ICON "icon2.ico"
-IDR_MYMENU MENU
-BEGIN
-    POPUP "Help"
-    BEGIN
-        MENUITEM "About", ID_HELP_ABOUT
-    END
-    POPUP "File"
-    BEGIN
-        MENUITEM "Save result to file", ID_FILE_SAVETOFILE
-        MENUITEM "Load result from file", ID_FILE_LOADFROMFILE
-    END
-    POPUP "Password"
-    BEGIN
-        MENUITEM "Use Password", ID_PASSWORD_USEPSWD
-    END
-END
 IDD_ABOUT DIALOG 0, 0, 137, 50
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "About FCrypter WIN32"
+CAPTION "About Crypter WIN32"
 // FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     ICON            IDI_MYICON,IDC_STATIC,7,7,31,30
-    LTEXT           "Version 0.5Dev",IDC_STATIC,48,17,86,8
-    LTEXT           "FCrypterWIN32",IDC_STATIC,48,7,89,8
+    LTEXT           IDV_VER,IDC_VER,48,17,86,8
+    LTEXT           "CrypterWIN32",IDC_STATIC,48,7,89,8
     DEFPUSHBUTTON   "OK",IDOK,55,32,30,12,WS_GROUP
 END
 VS_VERSION_INFO VERSIONINFO
@@ -46,14 +30,14 @@ BEGIN
         BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "FigaSystems\0"
-            VALUE "FileDescription", "FCrypter Encryption and Decryption WIN32 version\0"
+            VALUE "FileDescription", "Crypter Encryption and Decryption WIN32 version\0"
             VALUE "FileVersion", "0,4,5,0\0"
-            VALUE "InternalName", "FCrypterW32\0"
+            VALUE "InternalName", "CrypterW32\0"
             VALUE "LegalCopyright", "Copyright © 2020-2023\0"
             VALUE "LegalTrademarks", "\0"
-            VALUE "OriginalFilename", "FCrypterWIN32.exe"
+            VALUE "OriginalFilename", "CrypterWIN32.exe"
             VALUE "PrivateBuild", "0.4\0"
-            VALUE "ProductName", "FCrypter WIN32 (Win32)\0"
+            VALUE "ProductName", "Crypter WIN32 (Win32)\0"
             VALUE "ProductVersion", "0.4.5.0\0"
             VALUE "SpecialBuild", "\0"
         END
