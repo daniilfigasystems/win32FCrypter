@@ -68,7 +68,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     HMENU hmenu, subhmenu, subh2menu, subh3menu, subh4menu, subh32menu;
     MENUITEMINFO menuItem = {0};
     OPENFILENAMEA sfn;
-    HANDLE SaveFile;
+    HANDLE SaveFile, OpenFile;
     DWORD writtenbytes;
     char totaltext[1024];
     DWORD dwBufferSize;
@@ -97,7 +97,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 AppendMenu(subh2menu, MF_STRING /*| MF_DISABLED*/, ID_FILE_SAVETOFILE, TEXT("&Save result to file"));
             else
                 AppendMenu(subh2menu, MF_STRING | MF_DISABLED | MFS_DISABLED, ID_FILE_SAVETOFILE, TEXT("&Save result to file"));
-            AppendMenu(subh2menu, MF_STRING | MF_DISABLED | MFS_DISABLED, ID_FILE_LOADFROMFILE, TEXT("&Load result from file"));
+            AppendMenu(subh2menu, MF_STRING, ID_FILE_LOADFROMFILE, TEXT("&Load result from file"));
             AppendMenu(hmenu, MF_STRING | MF_POPUP, (UINT_PTR) subh2menu, TEXT("&File"));
             AppendMenu(subh4menu, MF_STRING, ID_EDIT_CLEAR, TEXT("&Clear String"));
             AppendMenu(hmenu, MF_STRING | MF_POPUP, (UINT_PTR) subh4menu, TEXT("&Edit"));
@@ -467,7 +467,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     sfn.nMaxFile = MAX_PATH;
                     sfn.Flags = OFN_EXPLORER | OFN_OVERWRITEPROMPT;
                     sfn.lpstrDefExt = "crypt\0txt";
-                    sfn.lpstrTitle = "Save Password and String";
+                    sfn.lpstrTitle = "Save Password and String to file";
                     if (GetSaveFileNameA(&sfn))
                     {
                         SaveFile = CreateFileA(szFileName, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -496,6 +496,32 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     std::cout << "Enter message before saving!" << std::endl;
                     MessageBox(NULL, TEXT("Please enter message before saving"), TEXT("Error"), MB_OK | MB_ICONERROR);
                 }
+            }
+            else if (LOWORD(wParam) == ID_FILE_LOADFROMFILE)
+            {
+                std::cout << "loading from file" << std::endl;
+                RtlZeroMemory(&sfn, sizeof(sfn));
+                sfn.lStructSize = sizeof(sfn); // SEE NOTE BELOW
+                sfn.hwndOwner = hwnd;
+                sfn.lpstrFilter = "Crypt Files (*.crypt)\0*.fcrypt\0Text Files (*.txt)\0*.txt\0All Files (*.*)\0*.*\0";
+                sfn.lpstrFile = szFileName;
+                sfn.nMaxFile = MAX_PATH;
+                sfn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_READONLY;
+                sfn.lpstrDefExt = "crypt\0txt";
+                sfn.lpstrTitle = "Open Password and String from file";
+                if (GetOpenFileNameA(&sfn))
+                    {
+                        OpenFile = CreateFileA(szFileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+                        dwBufferSize = (DWORD) strlen(totaltext);
+                        if (OpenFile != INVALID_HANDLE_VALUE)
+                        {
+                            if (ReadFile(SaveFile, totaltext, dwBufferSize, &writtenbytes, nullptr))
+                            {
+                                std::cout << "DONE" << std::endl;
+                            }
+                            CloseHandle(SaveFile);
+                        }
+                    }
             }
             else if (LOWORD(wParam) == ID_ENCRYPTION_USEPSWD)
             {
