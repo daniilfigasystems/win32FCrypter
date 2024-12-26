@@ -1,0 +1,17 @@
+Yes, in Windows drivers, you can call kernel internal functions using function pointers. Here is a simple example:
+
+// Define a function pointer type for the kernel internal function
+typedef NTSTATUS (*FnKeQueryActiveProcessorCountEx)(USHORT GroupNumber, PULONG ActiveProcessorCount);
+
+// Get the address of the function
+FnKeQueryActiveProcessorCountEx KeQueryActiveProcessorCountEx = (FnKeQueryActiveProcessorCountEx)MmGetSystemRoutineAddress(&"KeQueryActiveProcessorCountEx");
+
+// Check if the function pointer is valid
+if (KeQueryActiveProcessorCountEx) {
+    // Call the kernel internal function
+    ULONG activeProcessorCount;
+    NTSTATUS status = KeQueryActiveProcessorCountEx(0, &activeProcessorCount);
+    // Handle the result
+} else {
+    // Handle the case where the function pointer is NULL
+}

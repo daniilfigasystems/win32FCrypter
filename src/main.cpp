@@ -10,6 +10,7 @@
 #include <memory>
 #include <commctrl.h>
 #include <ctype.h>
+typedef BOOL WINBOOL;
 const TCHAR Class_Name[] = TEXT("myWindowClass");
 int selectindx = 0;
 HINSTANCE hInstanced;
@@ -110,11 +111,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             AppendMenu(subh3menu, MF_STRING | MFS_UNCHECKED, ID_ENCRYPTION_REVERSE, TEXT("&Apply Reverse Encrypt"));
             InsertMenu(subh3menu, 4, MF_SEPARATOR | MF_BYPOSITION, IDC_STATIC, NULL);
             AppendMenu(subh3menu, MF_POPUP, (UINT_PTR) subh32menu, TEXT("&Crypter Version"));
-            AppendMenu(subh32menu, MF_STRING | MFS_UNCHECKED, ID_ENCRYPTION_FVERSION_CRYPT1, TEXT("&Crypter 1.0 (Oldest)"));
-            AppendMenu(subh32menu, MF_STRING | MFS_UNCHECKED, ID_ENCRYPTION_FVERSION_CRYPT2, TEXT("&Crypter 2.0 (Old)"));
-            AppendMenu(subh32menu, MF_STRING | MFS_CHECKED, ID_ENCRYPTION_FVERSION_CRYPT3, TEXT("&Crypter 3.0 (Stable)"));
-            AppendMenu(subh32menu, MF_STRING | MFS_UNCHECKED, ID_ENCRYPTION_FVERSION_CRYPT4, TEXT("&Crypter 4.0 (Experimental)"));
-            AppendMenu(subh32menu, MF_STRING | MFS_UNCHECKED, ID_ENCRYPTION_FVERSION_CRYPT45, TEXT("&Crypter 4.5 (Test)"));
+            AppendMenu(subh32menu, MF_STRING | MFS_UNCHECKED, ID_ENCRYPTION_FVERSION_CRYPT1, TEXT("&Crypter 1.0 (Ancient)"));
+            AppendMenu(subh32menu, MF_STRING | MFS_UNCHECKED, ID_ENCRYPTION_FVERSION_CRYPT2, TEXT("&Crypter 2.0 (Oldest)"));
+            AppendMenu(subh32menu, MF_STRING | MFS_CHECKED, ID_ENCRYPTION_FVERSION_CRYPT3, TEXT("&Crypter 3.0 (Old)"));
+            AppendMenu(subh32menu, MF_STRING | MFS_UNCHECKED, ID_ENCRYPTION_FVERSION_CRYPT4, TEXT("&Crypter 4.0 (Stable)"));
+            AppendMenu(subh32menu, MF_STRING | MFS_UNCHECKED, ID_ENCRYPTION_FVERSION_CRYPT45, TEXT("&Crypter 4.5 (Newest)"));
+            AppendMenu(subh32menu, MF_STRING | MFS_UNCHECKED, ID_ENCRYPTION_FVERSION_CRYPT5, TEXT("&Crypter 5.0 (Experimental)"));
             AppendMenu(hmenu, MF_STRING | MF_POPUP, (UINT_PTR) subh3menu, TEXT("&Encryption"));
             AppendMenu(subhmenu, MF_STRING, ID_HELP_ABOUT, TEXT("&About"));
             AppendMenu(hmenu, MF_STRING | MF_POPUP, (UINT_PTR) subhmenu, TEXT("&Help"));
@@ -191,6 +193,33 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 case 0:
                     switch(crypterver)
                     {
+                        case 5:
+                        {
+                            int index = 0;
+
+                            for (int i = 0; i < (strlen(inputtext) + strlen(keypass) + strlen(keypass2)); i++)
+                            {
+                                index++;
+                            }
+
+                            printf("\nCrypter ver0.5ex\n");
+                            printf("\nYou need enter or create key for security\nWrite they in safe place\nFormat of key looks like <1234567890 12345>\nDEBUG BUILD VERSION EX4.5");
+                            printf("\nPlease enter a string:\t");
+                            std::cout << inputtext;
+                            printf("\nPlease choose following options:\n");
+                            printf("1 = Encrypt the string.\n");
+                            printf("2 = Decrypt the string.\n");
+                            std::cout << selectindx << std::endl;
+                            printf("Create or Provide Exist Key:\n");
+                            std::cout << scnt << " " << scnt2;
+                            for(int i = 0; (i < 1024 && inputtext[i] != '\0'); i++)
+                                inputtext[i] =  (inputtext[i] + scnt - scnt2 + 25 - 113 - 1 + 2 + scnt + index) ^ 0x40; //the key for encryption is 3 that is added to ASCII value
+                            printf("\nYou Encrypted String! You now in safe");
+                            printf("\nEncrypted string: %s\n", inputtext);
+                            printf("\naddr %p | %p | %p", inputtext, scnt2, scnt);
+                        break;
+                        }
+
                         case 45:
                         {
                             int index = 0;
@@ -316,6 +345,33 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 case 1:
                     switch(crypterver)
                     {
+                        case 5:
+                        {
+                            int index = 0;
+
+                            for (int i = 0; i < (strlen(inputtext) + strlen(keypass) + strlen(keypass2)); i++)
+                            {
+                                index++;
+                            }
+
+                            printf("\nCrypter ver0.5ex\n");
+                            printf("\nYou need enter or create key for security\nWrite they in safe place\nFormat of key looks like <1234567890 12345>\nDEBUG BUILD VERSION EX4.5");
+                            printf("\nPlease enter a string:\t");
+                            std::cout << inputtext;
+                            printf("\nPlease choose following options:\n");
+                            printf("1 = Encrypt the string.\n");
+                            printf("2 = Decrypt the string.\n");
+                            std::cout << selectindx << std::endl;
+                            printf("Create or Provide Exist Key:\n");
+                            std::cout << scnt << " " << scnt2;
+                            for(int i = 0; (i < 1024 && inputtext[i] != '\0'); i++)
+                            inputtext[i] = (inputtext[i] - scnt + scnt2 - 25 + 113 + 1 - 2 - scnt - index) ^ 0x40; //the key for encryption is 3 that is subtracted to ASCII value
+                            printf("\nYou Decrypted String!\n");
+                            printf("\nDecrypted string: %s\n", inputtext);
+                            printf("\naddr %p | %p | %p", inputtext, scnt2, scnt);
+                        break;
+                        }
+
                         case 45:
                         {
                             int index = 0;
@@ -458,7 +514,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             {
                 if (GetWindowTextLength(GetDlgItem(hwnd, 5)) > 0)
                 {
-                    std::cout << "saving" << std::endl;
+                    std::cout << "saving to file" << std::endl;
                     RtlZeroMemory(&sfn, sizeof(sfn));
                     sfn.lStructSize = sizeof(sfn); // SEE NOTE BELOW
                     sfn.hwndOwner = hwnd;
@@ -468,19 +524,24 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     sfn.Flags = OFN_EXPLORER | OFN_OVERWRITEPROMPT;
                     sfn.lpstrDefExt = "crypt\0txt";
                     sfn.lpstrTitle = "Save Password and String to file";
+
                     if (GetSaveFileNameA(&sfn))
                     {
                         SaveFile = CreateFileA(szFileName, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
                         GetWindowTextA(GetDlgItem(hwnd, 5), inputtext, 1024);
                         RtlZeroMemory(totaltext, sizeof(totaltext));
+
                         strcat(totaltext, inputtext);
                         strcat(totaltext, "\r\n");
+
                         GetWindowTextA(GetDlgItem(hwnd, 6), keypass, 1024);
                         GetWindowTextA(GetDlgItem(hwnd, 7), keypass2, 1024);
+
                         strcat(totaltext, keypass);
                         strcat(totaltext, " ");
                         strcat(totaltext, keypass2);
                         dwBufferSize = (DWORD) strlen(totaltext);
+
                         if (SaveFile != INVALID_HANDLE_VALUE)
                         {
                             if (WriteFile(SaveFile, totaltext, dwBufferSize, &writtenbytes, nullptr))
@@ -501,7 +562,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             {
                 std::cout << "loading from file" << std::endl;
                 RtlZeroMemory(&sfn, sizeof(sfn));
-                sfn.lStructSize = sizeof(sfn); // SEE NOTE BELOW
+                sfn.lStructSize = sizeof(sfn); 
                 sfn.hwndOwner = hwnd;
                 sfn.lpstrFilter = "Crypt Files (*.crypt)\0*.fcrypt\0Text Files (*.txt)\0*.txt\0All Files (*.*)\0*.*\0";
                 sfn.lpstrFile = szFileName;
@@ -509,19 +570,44 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 sfn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_READONLY;
                 sfn.lpstrDefExt = "crypt\0txt";
                 sfn.lpstrTitle = "Open Password and String from file";
+                
                 if (GetOpenFileNameA(&sfn))
+                {
+                    OpenFile = CreateFileA(szFileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+                    if (OpenFile != INVALID_HANDLE_VALUE)
                     {
-                        OpenFile = CreateFileA(szFileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-                        dwBufferSize = (DWORD) strlen(totaltext);
-                        if (OpenFile != INVALID_HANDLE_VALUE)
+                        dwBufferSize = GetFileSize(OpenFile, nullptr);
+                        if (dwBufferSize != INVALID_FILE_SIZE)
                         {
-                            if (ReadFile(SaveFile, totaltext, dwBufferSize, &writtenbytes, nullptr))
+                            char* buffer = new char[dwBufferSize + 1];
+                            DWORD bytesRead;
+                            if (ReadFile(OpenFile, buffer, dwBufferSize, &bytesRead, NULL))
                             {
-                                std::cout << "DONE" << std::endl;
+                                buffer[dwBufferSize] = '\0';
+                                std::string text = std::string(buffer);
+                                std::string pass = std::string(buffer);
+
+                                size_t pos = pass.find("\r\n");
+                                size_t pos2 = pass.find(' ');
+
+                                if (pos != std::string::npos && pos2 != std::string::npos)
+                                {
+                                    std::string desttext = text.substr(0, pos);
+                                    std::string pass1 = pass.substr(pos, pos2 - pos);
+                                    std::string pass2 = pass.substr(pos2 + 1);
+
+                                    SendMessageA(GetDlgItem(hwnd, 5), WM_SETTEXT, 0, (LPARAM) desttext.c_str());
+                                    SetWindowTextA(GetDlgItem(hwnd, 6), pass1.c_str());
+                                    SetWindowTextA(GetDlgItem(hwnd, 7), pass2.c_str());
+
+                                    std::cout << "DONE" << std::endl;
+                                }
                             }
-                            CloseHandle(SaveFile);
+                            delete[] buffer;
                         }
+                        CloseHandle(OpenFile);
                     }
+                }
             }
             else if (LOWORD(wParam) == ID_ENCRYPTION_USEPSWD)
             {
@@ -602,12 +688,57 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 
                 SetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_REVERSE, FALSE, &menuItem);
             }
+            else if (LOWORD(wParam) == ID_ENCRYPTION_FVERSION_CRYPT5)
+            {
+                std::cout << "test5" << std::endl;
+                crypterver = 5;
+
+                for (int i = ID_ENCRYPTION_FVERSION_CRYPT1; i < (ID_ENCRYPTION_FVERSION_CRYPT5 + 1); i++)
+                {
+                    menuItem.cbSize = sizeof(MENUITEMINFO);
+                    menuItem.fMask = MIIM_STATE;
+
+                    GetMenuItemInfo(GetMenu(hwnd), i, FALSE, &menuItem);
+
+                    menuItem.fState = MFS_UNCHECKED;
+
+                    SetMenuItemInfo(GetMenu(hwnd), i, FALSE, &menuItem);     
+                }
+
+                menuItem.cbSize = sizeof(MENUITEMINFO);
+                menuItem.fMask = MIIM_STATE;
+
+                GetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_FVERSION_CRYPT5, FALSE, &menuItem);
+
+                if (menuItem.fState == MFS_CHECKED) 
+                {
+                    menuItem.fState = MFS_UNCHECKED;
+                } 
+                else 
+                {
+                    menuItem.fState = MFS_CHECKED;
+                }
+                
+                SetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_FVERSION_CRYPT5, FALSE, &menuItem); 
+
+                menuItem.cbSize = sizeof(MENUITEMINFO);
+                menuItem.fMask = MIIM_STATE;
+
+                GetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_USEPSWD, FALSE, &menuItem);
+
+                menuItem.fState = MFS_CHECKED;
+
+                EnableWindow(GetDlgItem(hwnd, 7), TRUE);
+                EnableWindow(GetDlgItem(hwnd, 6), TRUE);
+
+                SetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_USEPSWD, FALSE, &menuItem); 
+            }
             else if (LOWORD(wParam) == ID_ENCRYPTION_FVERSION_CRYPT45)
             {
                 std::cout << "test45" << std::endl;
                 crypterver = 45;
 
-                for (int i = ID_ENCRYPTION_FVERSION_CRYPT1; i < (ID_ENCRYPTION_FVERSION_CRYPT45 + 1); i++)
+                for (int i = ID_ENCRYPTION_FVERSION_CRYPT1; i < (ID_ENCRYPTION_FVERSION_CRYPT5 + 1); i++)
                 {
                     menuItem.cbSize = sizeof(MENUITEMINFO);
                     menuItem.fMask = MIIM_STATE;
@@ -642,6 +773,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
                 menuItem.fState = MFS_CHECKED;
 
+                EnableWindow(GetDlgItem(hwnd, 7), TRUE);
+                EnableWindow(GetDlgItem(hwnd, 6), TRUE);
+
                 SetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_USEPSWD, FALSE, &menuItem); 
             }
             else if (LOWORD(wParam) == ID_ENCRYPTION_FVERSION_CRYPT4)
@@ -649,7 +783,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 std::cout << "test4" << std::endl;
                 crypterver = 4;
 
-                for (int i = ID_ENCRYPTION_FVERSION_CRYPT1; i < (ID_ENCRYPTION_FVERSION_CRYPT45 + 1); i++)
+                for (int i = ID_ENCRYPTION_FVERSION_CRYPT1; i < (ID_ENCRYPTION_FVERSION_CRYPT5 + 1); i++)
                 {
                     menuItem.cbSize = sizeof(MENUITEMINFO);
                     menuItem.fMask = MIIM_STATE;
@@ -684,6 +818,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
                 menuItem.fState = MFS_CHECKED;
 
+                EnableWindow(GetDlgItem(hwnd, 7), TRUE);
+                EnableWindow(GetDlgItem(hwnd, 6), TRUE);
+
                 SetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_USEPSWD, FALSE, &menuItem); 
             }
             else if (LOWORD(wParam) == ID_ENCRYPTION_FVERSION_CRYPT3)
@@ -691,7 +828,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 std::cout << "test3" << std::endl;
                 crypterver = 3;
 
-                for (int i = ID_ENCRYPTION_FVERSION_CRYPT1; i < (ID_ENCRYPTION_FVERSION_CRYPT45 + 1); i++)
+                for (int i = ID_ENCRYPTION_FVERSION_CRYPT1; i < (ID_ENCRYPTION_FVERSION_CRYPT5 + 1); i++)
                 {
                     menuItem.cbSize = sizeof(MENUITEMINFO);
                     menuItem.fMask = MIIM_STATE;
@@ -725,7 +862,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 GetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_USEPSWD, FALSE, &menuItem);
 
                 menuItem.fState = MFS_CHECKED;
-                
+
+                EnableWindow(GetDlgItem(hwnd, 7), TRUE);
+                EnableWindow(GetDlgItem(hwnd, 6), TRUE);
 
                 SetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_USEPSWD, FALSE, &menuItem); 
             }
@@ -734,7 +873,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 std::cout << "test2" << std::endl;
                 crypterver = 2;
                 
-                for (int i = ID_ENCRYPTION_FVERSION_CRYPT1; i < (ID_ENCRYPTION_FVERSION_CRYPT45 + 1); i++)
+                for (int i = ID_ENCRYPTION_FVERSION_CRYPT1; i < (ID_ENCRYPTION_FVERSION_CRYPT5 + 1); i++)
                 {
                     menuItem.cbSize = sizeof(MENUITEMINFO);
                     menuItem.fMask = MIIM_STATE;
@@ -767,10 +906,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
                 GetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_USEPSWD, FALSE, &menuItem);
 
-                menuItem.fState = MFS_CHECKED | MFS_DISABLED;
+                menuItem.fState = MFS_UNCHECKED | MFS_DISABLED;
                 
-                EnableWindow(GetDlgItem(hwnd, 7), TRUE);
-                EnableWindow(GetDlgItem(hwnd, 6), TRUE);
+                // EnableWindow(GetDlgItem(hwnd, 7), TRUE);
+                // EnableWindow(GetDlgItem(hwnd, 6), TRUE);
+                SetDlgItemTextA(hwnd, 7, NULL);
+                EnableWindow(GetDlgItem(hwnd, 7), FALSE);
+                SetDlgItemTextA(hwnd, 6, NULL);
+                EnableWindow(GetDlgItem(hwnd, 6), FALSE);
 
                 SetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_USEPSWD, FALSE, &menuItem); 
             }
@@ -779,7 +922,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 std::cout << "test1" << std::endl;
                 crypterver = 1;
 
-                for (int i = ID_ENCRYPTION_FVERSION_CRYPT1; i < (ID_ENCRYPTION_FVERSION_CRYPT45 + 1); i++)
+                for (int i = ID_ENCRYPTION_FVERSION_CRYPT1; i < (ID_ENCRYPTION_FVERSION_CRYPT5 + 1); i++)
                 {
                     menuItem.cbSize = sizeof(MENUITEMINFO);
                     menuItem.fMask = MIIM_STATE;
@@ -813,10 +956,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
                 GetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_USEPSWD, FALSE, &menuItem);
 
-                menuItem.fState = MFS_CHECKED | MFS_DISABLED;
+                menuItem.fState = MFS_UNCHECKED | MFS_DISABLED;
                 
-                EnableWindow(GetDlgItem(hwnd, 7), TRUE);
-                EnableWindow(GetDlgItem(hwnd, 6), TRUE);
+                // EnableWindow(GetDlgItem(hwnd, 7), TRUE);
+                // EnableWindow(GetDlgItem(hwnd, 6), TRUE);
+                SetDlgItemTextA(hwnd, 7, NULL);
+                EnableWindow(GetDlgItem(hwnd, 7), FALSE);
+                SetDlgItemTextA(hwnd, 6, NULL);
+                EnableWindow(GetDlgItem(hwnd, 6), FALSE);
 
                 SetMenuItemInfo(GetMenu(hwnd), ID_ENCRYPTION_USEPSWD, FALSE, &menuItem); 
             }
@@ -845,7 +992,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     
     hInstanced = hInstance;
 
-    ShowWindow(GetConsoleWindow(), SW_HIDE);
+    if (!nCmdShow)
+        ShowWindow(GetConsoleWindow(), SW_HIDE);
 
     wc.cbSize = sizeof(WNDCLASSEX);
     wc.cbClsExtra = 0;

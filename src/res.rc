@@ -1,5 +1,5 @@
 #include "resource.h"
-#include "afxres.h"
+#include "windows.h"
 IDI_MYICON ICON "icon2.ico"
 IDD_ABOUT DIALOG 0, 0, 137, 50
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
